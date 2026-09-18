@@ -1,1 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+<title>Tap Master</title>
+
+<style>
+*{
+  box-sizing:border-box;
+  margin:0;
+  padding:0;
+}
+
+body{
+  font-family:Arial,sans-serif;
+  background:#111827;
+  color:white;
+  text-align:center;
+  overflow:hidden;
+}
+
+.top{
+  padding:14px 8px;
+  display:flex;
+  justify-content:space-around;
+  font-size:18px;
+  font-weight:bold;
+  background:#0f172a;
+}
+
+#game{
+  position:relative;
+  width:100%;
+  height:calc(100vh - 58px);
+  background:#1f2937;
+  overflow:hidden;
+}
+
+#target{
+  position:absolute;
+  width:70px;
+  height:70px;
+  border-radius:50%;
+  background:#ef4444;
+  border:5px solid white;
+  display:none;
+  cursor:pointer;
+  touch-action:manipulation;
+}
+
+#start{
+  position:absolute;
+  left:50%;
+  top:50%;
+  transform:translate(-50%,-50%);
+  padding:15px 30px;
+  font-size:20px;
+  font-weight:bold;
+  border:0;
+  border-radius:12px;
+  background:#22c55e;
+  color:white;
+}
+
+#message{
+  position:absolute;
+  left:50%;
+  top:38%;
+  transform:translate(-50%,-50%);
+  font-size:28px;
+  font-weight:bold;
+  width:100%;
+  line-height:1.5;
+}
+
+#next{
+  display:none;
+  position:absolute;
+  left:50%;
+  top:55%;
+  transform:translate(-50%,-50%);
+  padding:14px 28px;
+  font-size:19px;
+  font-weight:bold;
+  border:0;
+  border-radius:12px;
+  background:#3b82f6;
+  color:white;
+}
+</style>
+</head>
+
+<body>
+
+<div class="top">
+  <div>🎯 Score: <span id="score">0</span></div>
+  <div>⭐ Level: <span id="level">1</span>/50</div>
+  <div>⏱️ <span id="time">20</span></div>
+</div>
+
+<div id="game">
+
+  <div id="message">🎯 Tap Master</div>
+
+  <button id="start">START GAME</button>
+
+  <button id="next">NEXT LEVEL</button>
+
+  <div id="target"></div>
+
+</div>
+
+<script>
+
+const game = document.getElementById("game");
+const target = document.getElementById("target");
+const start = document.getElementById("start");
+const next = document.getElementById("next");
+const message = document.getElementById("message");
+
+const scoreText = document.getElementById("score");
+const levelText = document.getElementById("level");
+const timeText = document.getElementById("time");
+
+let score = 0;
+let level = 1;
+let time = 20;
+let hits = 0;
+let needed = 5;
+let timer;
+
+function settings(){
+
+  // প্রতি লেভেলে টার্গেট একটু ছোট হবে
+  let size = Math.max(35,70 - (level - 1) * 0.7);
+
+  target.style.width = size + "px";
+  target.style.height = size + "px";
+
+  // লেভেল বাড়লে প্রয়োজনীয় ট্যাপও বাড়বে
+  needed = 5 + Math.floor((level - 1) / 3);
+}
+
+function moveTarget(){
+
+  const maxX = Math.max(0, game.clientWidth - target.offsetWidth);
+  const maxY = Math.max(0, game.clientHeight - target.offsetHeight);
+
+  const x = Math.random() * maxX;
+  const y = Math.random() * maxY;
+
+  target.style.left = x + "px";
+  target.style.top = y + "px";
+}
+
+function startLevel(){
+
+  clearInterval(timer);
+
+  hits = 0;
+  time = Math.max(8,20 - Math.floor((level - 1) / 5));
+
+  scoreText.textContent = score;
+  levelText.textContent = level;
+  timeText.textContent = time;
+
+  settings();
+
+  message.style.display = "none";
+  next.style.display = "none";
+  start.style.display = "none";
+  target.style.display = "block";
+
+  moveTarget();
+
+  timer = setInterval(function(){
+
+    time--;
+
+    timeText.textContent = time;
+
+    if(time <= 0){
+      levelFailed();
+    }
+
+  },1000);
+}
+
+function levelFailed(){
+
+  clearInterval(timer);
+
+  target.style.display = "none";
+  start.style.display = "block";
+
+  message.innerHTML =
+    "❌ Level Failed!<br>" +
+    "Score: " + score;
+
+  message.style.display = "block";
+  start.textContent = "TRY AGAIN";
+}
+
+function levelComplete(){
+
+  clearInterval(timer);
+
+  target.style.display = "none";
+
+  if(level >= 50){
+
+    message.innerHTML =
+      "🏆 CONGRATULATIONS!<br>" +
+      "🎉 You completed all 50 levels!<br>" +
+      "Score: " + score;
+
+    message.style.display = "block";
+    start.style.display = "block";
+    start.textContent = "PLAY AGAIN";
+
+    return;
+  }
+
+  message.innerHTML =
+    "🎉 Level " + level + " Complete!<br>" +
+    "Get ready for Level " + (level + 1);
+
+  message.style.display = "block";
+  next.style.display = "block";
+}
+
+function newGame(){
+
+  score = 0;
+  level = 1;
+
+  startLevel();
+}
+
+target.addEventListener("click",function(){
+
+  hits++;
+  score++;
+
+  scoreText.textContent = score;
+
+  if(hits >= needed){
+    levelComplete();
+  }else{
+    moveTarget();
+  }
+
+});
+
+start.addEventListener("click",function(){
+
+  if(start.textContent === "PLAY AGAIN"){
+    newGame();
+  }else{
+    startLevel();
+  }
+
+});
+
+next.addEventListener("click",function(){
+
+  level++;
+
+  startLevel();
+
+});
+
+</script>
+
+</body>
+</html>
